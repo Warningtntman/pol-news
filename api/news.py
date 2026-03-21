@@ -16,6 +16,9 @@ INSFORGE_BASE_URL = os.getenv("INSFORGE_BASE_URL", "").rstrip('/')
 INSFORGE_KEY = os.getenv("INSFORGE_API_KEY") 
 NEWSDATA_API_KEY = os.getenv("NEWSDATA_API_KEY")
 
+HAS_INFORGE = bool(INSFORGE_BASE_URL and INSFORGE_KEY)
+HAS_NEWSDATA = bool(NEWSDATA_API_KEY)
+
 class InsForgeClient:
     def __init__(self) -> None:
         self.base_url = INSFORGE_BASE_URL
@@ -55,9 +58,9 @@ class InsForgeClient:
                 headers=self._headers
             )
             if resp.status_code in [200, 204]:
-                print("🧹 Database successfully wiped.")
+                print("Database successfully wiped.")
             else:
-                print(f"⚠️ Clear skipped or failed (Status {resp.status_code})")
+                print(f"Clear skipped or failed (Status {resp.status_code})")
 
     async def save_records(self, records: list):
         """Saves news using Upsert to handle potential duplicates gracefully"""
@@ -87,7 +90,13 @@ insforge = InsForgeClient()
 
 async def sync_news_to_db():
     """Main task: Fetch (Filtered) -> Scrape -> AI -> Clean -> Save"""
-    print("🔄 Starting Filtered News Sync (US Politics Only)...")
+    print("Starting Filtered News Sync (US Politics Only)...")
+
+    # If env vars aren't configured yet, don't spam failures. The UI can still start
+    # and will just show "no news available" until backend is fully configured.
+    if not HAS_INFORGE or not HAS_NEWSDATA:
+        print("Missing env vars (INSFORGE / NEWSDATA). Skipping sync.")
+        return
     
     # Updated params for strict filtering
     params = {
@@ -111,7 +120,7 @@ async def sync_news_to_db():
         skip_keywords = ['listings', 'ratings', 'stocks', 'forecast', 'horoscope']
 
         if any(word in title for word in skip_keywords):
-            print(f"⏩ Skipping non-political item: {title[:30]}")
+            print(f"Skipping non-political item: {title[:30]}")
             continue
         url = article.get('link')
         title = article.get('title', 'Untitled')
@@ -130,12 +139,13 @@ async def sync_news_to_db():
         if len(text.strip()) > 20:
             try:
                 bias = await insforge.analyze_bias(text)
-                print(f"📊 Bias analyzed for: {title[:40]}...")
+                print(f"Bias analyzed for: {title[:40]}...")
             except Exception as e:
                 print(f"AI Error for {title}: {e}")
 
+        article_id = article.get("article_id") or article.get("link") or title
         db_entries.append({
-            "article_id": article.get("article_id"),
+            "article_id": article_id,
             "title": title,
             "link": url,
             "image": article.get("image_url"),
@@ -151,9 +161,9 @@ async def sync_news_to_db():
         # We clear first to ensure we only have the freshest 10 articles
         await insforge.clear_news()
         await insforge.save_records(db_entries)
-        print(f"✅ Saved {len(db_entries)} fresh articles to database.")
+        print(f"Saved {len(db_entries)} fresh articles to database.")
     except Exception as e:
-        print(f"❌ Database Sync Failed: {e}")
+        print(f"Database Sync Failed: {e}")
 
 async def news_worker():
     """Background loop: Immediate run, then 12-hour cycle"""
@@ -161,7 +171,7 @@ async def news_worker():
         try:
             await sync_news_to_db()
         except Exception as e:
-            print(f"❌ Worker Error: {e}")
+            print(f"Worker Error: {e}")
         await asyncio.sleep(43200) # 12 hours
 
 @asynccontextmanager
@@ -183,6 +193,13 @@ app.add_middleware(
 async def get_news():
     """Returns news from the DB instantly for the UI"""
     try:
+        if not HAS_INFORGE:
+            return {
+                "status": "success",
+                "articles": [],
+                "warning": "INSFORGE env vars not configured yet",
+            }
+
         articles = await insforge.get_records()
         return {"status": "success", "articles": articles}
     except Exception as e:

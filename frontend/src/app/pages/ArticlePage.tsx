@@ -1,21 +1,56 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { BiasMeter } from '../components/BiasMeter';
 import { QuizOverlay } from '../components/QuizOverlay';
-import { mockStoryClusters, mockQuizQuestions } from '../data/mockData';
+import { mockQuizQuestions } from '../data/mockData';
+import type { StoryCluster as StoryClusterType } from '../data/mockData';
+import { fetchNewsStoryClusters } from '../api/newsApi';
 
 export function ArticlePage() {
   const { storyId, articleId } = useParams();
   const navigate = useNavigate();
   const [quizOpen, setQuizOpen] = useState(false);
+  const [storyClusters, setStoryClusters] = useState<StoryClusterType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const story = mockStoryClusters.find((s) => s.id === storyId);
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await fetchNewsStoryClusters();
+        if (!cancelled) setStoryClusters(data);
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const story = storyClusters.find((s) => s.id === storyId);
   const article = story?.sources.find((a) => a.id === articleId);
 
-  if (!article || !story) {
-    return <div>Article not found</div>;
+  if (loading) {
+    return <div className="min-h-screen p-6 text-sm text-gray-600">Loading article...</div>;
   }
+
+  if (error) {
+    return <div className="min-h-screen p-6 text-sm text-red-700">{error}</div>;
+  }
+
+  if (!article || !story) {
+    return <div className="min-h-screen p-6 text-sm text-gray-600">Article not found</div>;
+  }
+
+  const hasExternalUrl = article.url && article.url !== '#';
 
   return (
     <div className="min-h-screen bg-white font-['Inter']">
@@ -50,28 +85,22 @@ export function ArticlePage() {
         </h1>
 
         <div className="prose prose-lg max-w-none">
-          <p className="text-gray-700 leading-relaxed mb-4">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod 
-            tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, 
-            quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+          <p className="text-gray-700 leading-relaxed mb-6">
+            Source bias is calculated from the article content. Read the original article below:
           </p>
-          
-          <p className="text-gray-700 leading-relaxed mb-4">
-            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore 
-            eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt 
-            in culpa qui officia deserunt mollit anim id est laborum.
-          </p>
-          
-          <p className="text-gray-700 leading-relaxed mb-4">
-            Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium 
-            doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore 
-            veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-          </p>
-          
-          <p className="text-gray-700 leading-relaxed mb-8">
-            Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, 
-            sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
-          </p>
+
+          {hasExternalUrl ? (
+            <a
+              href={article.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block text-blue-700 hover:text-blue-800 font-medium mb-8 underline"
+            >
+              {article.url}
+            </a>
+          ) : (
+            <p className="text-gray-600 text-sm mb-8">No external link provided by the backend.</p>
+          )}
         </div>
 
         {/* CTA Button */}
