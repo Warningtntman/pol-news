@@ -27,7 +27,6 @@ async def fetch_articles(query: str, max_results: int = 10) -> List[Article]:
         "apikey": settings.newsdata_api_key,
         "q": query,
         "language": "en",
-        "full_content": 1,
     }
     async with httpx.AsyncClient(timeout=15.0) as client:
         response = await client.get(BASE_URL, params=params)
