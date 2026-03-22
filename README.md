@@ -1,8 +1,8 @@
-# pol-news
+# Pol-News
 
 > See the same story through every lens. AI-powered political news bias analysis across multiple sources.
 
-pol-news clusters US political news stories from different outlets and uses Claude AI to analyze the political lean of each article — giving you a left/center/right breakdown so you can see how different publishers frame the same event.
+Pol-News clusters US political news stories from different outlets and uses Claude AI to analyze the political lean of each article — giving you a left/center/right breakdown so you can see how different publishers frame the same event.
 
 ---
 
