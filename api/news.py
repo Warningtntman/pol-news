@@ -36,8 +36,17 @@ class InsForgeClient:
         payload = {
             'model': 'x-ai/grok-4.1-fast',
             'messages': [
-                {"role": "system", "content": "Return ONLY JSON: {'left': int, 'center': int, 'right': int}. Sum to 100."},
-                {"role": "user", "content": text}
+                {
+                    "role": "system", 
+                    "content": (
+                        "You are an expert political media analyst. Analyze the provided text, which is a US political news article. "
+                        "Evaluate the text for: 1. Loaded language or emotional adjectives. 2. Selective omission of opposing viewpoints. "
+                        "3. Policy framing (e.g., social safety nets vs. fiscal responsibility). "
+                        "Return ONLY a JSON object with integer percentages representing the bias: "
+                        "{'left': int, 'center': int, 'right': int}. The values MUST sum to exactly 100."
+                    )
+                },
+                {"role": "user", "content": f"Analyze the following political text: {text}"}
             ],
             'stream': False
         }

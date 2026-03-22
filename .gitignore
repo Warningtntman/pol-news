@@ -1,3 +1,12 @@
+# Backend
 .env
 __pycache__/
 venv/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.pnpm-debug.log*
+
+# System Files
+.DS_Store
