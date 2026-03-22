@@ -8,6 +8,7 @@ export interface SourceArticle {
   id: string;
   publisher: string;
   publisherLogo: string;
+  iconUrl?: string;
   headline: string;
   bias: BiasScore;
   url: string;

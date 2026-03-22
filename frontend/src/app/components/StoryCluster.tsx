@@ -19,7 +19,7 @@ export function StoryCluster({ cluster }: StoryClusterProps) {
         </div>
       </div>
       
-      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {cluster.sources.map((source) => (
           <SourceCard key={source.id} source={source} storyId={cluster.id} />
         ))}

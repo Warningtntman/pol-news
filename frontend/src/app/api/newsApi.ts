@@ -30,18 +30,27 @@ function mapBias(record: any): BiasScore {
   }
 }
 
+function faviconUrl(url: string): string | undefined {
+  try {
+    const domain = new URL(url).hostname
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+  } catch {
+    return undefined
+  }
+}
+
 function mapArticleToSource(record: any): SourceArticle {
   const publisher = String(record?.source ?? record?.publisher ?? '').trim()
   const headline = String(record?.title ?? record?.headline ?? '').trim()
   const url = String(record?.link ?? record?.url ?? '#')
 
-  // UI currently shows a short text logo (e.g. `NYT`) instead of an image.
   const publisherLogo = publisher ? publisher.slice(0, 3).toUpperCase() : 'N/A'
 
   return {
     id: String(record?.article_id ?? record?.id ?? ''),
     publisher,
     publisherLogo,
+    iconUrl: faviconUrl(url),
     headline,
     url,
     bias: mapBias(record),

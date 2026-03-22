@@ -38,7 +38,7 @@ export function FeedPage() {
     <div className="min-h-screen bg-[#F9FAFB] font-['Inter']">
       {/* Top Nav */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/">
             <h1 className="font-['Merriweather'] font-bold text-2xl text-gray-900 hover:text-blue-600 transition-colors">
               Pol-News
@@ -55,7 +55,7 @@ export function FeedPage() {
 
       {/* Live Sync Banner */}
       <div className="bg-[#FEF3C7] border-b border-yellow-300">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2">
           <Zap className="w-4 h-4 text-yellow-700" />
           <span className="text-sm text-yellow-900 font-medium">
             Live Sync: {updatedText}
@@ -64,7 +64,7 @@ export function FeedPage() {
       </div>
 
       {/* Story Clusters Feed */}
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main className="max-w-5xl mx-auto px-4 py-6">
         {loading ? (
           <div className="text-sm text-gray-600">Loading news...</div>
         ) : error ? (
