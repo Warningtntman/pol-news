@@ -1,11 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { SourceArticle } from '../data/mockData';
 import { BiasMeter } from './BiasMeter';
 import { Link } from 'react-router';
 import { getPublisherAccent } from '../utils/publisherStyle';
-
-const FALLBACK_THUMBNAIL =
-  'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&q=80&auto=format&fit=crop';
+import { getFallbackArticleImageAt } from '../data/fallbackArticleImages';
 
 interface SourceCardProps {
   source: SourceArticle;
@@ -15,10 +13,18 @@ interface SourceCardProps {
 
 export function SourceCard({ source, storyId, storyTitle }: SourceCardProps) {
   const [iconError, setIconError] = useState(false);
-  const [thumbError, setThumbError] = useState(false);
+  /** Primary API image failed or was rejected */
+  const [primaryImageFailed, setPrimaryImageFailed] = useState(false);
+  /** Rotate through library when a fallback URL fails to load */
+  const [fallbackOffset, setFallbackOffset] = useState(0);
 
-  const thumbSrc =
-    source.imageUrl && !thumbError ? source.imageUrl : FALLBACK_THUMBNAIL;
+  const thumbSeed = useMemo(() => `${storyId}:${source.id}`, [storyId, source.id]);
+
+  const usePrimary = Boolean(source.imageUrl) && !primaryImageFailed;
+  const thumbSrc = usePrimary
+    ? source.imageUrl!
+    : getFallbackArticleImageAt(thumbSeed, fallbackOffset);
+
   const accent = getPublisherAccent(source.publisher);
 
   return (
@@ -31,7 +37,14 @@ export function SourceCard({ source, storyId, storyTitle }: SourceCardProps) {
           src={thumbSrc}
           alt=""
           className="h-full w-full object-cover"
-          onError={() => setThumbError(true)}
+          onError={() => {
+            if (source.imageUrl && !primaryImageFailed) {
+              setPrimaryImageFailed(true);
+              setFallbackOffset(0);
+            } else {
+              setFallbackOffset((o) => o + 1);
+            }
+          }}
           loading="lazy"
         />
       </div>
