@@ -35,9 +35,9 @@ class InsForgeClient:
         }
 
     async def analyze_bias(self, text: str):
-        """Calls Grok 4.1 via InsForge Gateway"""
+        """Calls Claude Sonnet 4.6 via InsForge Gateway"""
         payload = {
-            'model': 'x-ai/grok-4.1-fast',
+            'model': 'anthropic/claude-sonnet-4.6',
             'messages': [
                 {
                     "role": "system", 
@@ -57,8 +57,10 @@ class InsForgeClient:
             resp = await http.post(f'{self.base_url}/api/ai/chat/completion', headers=self._headers, json=payload)
             resp.raise_for_status()
             data = resp.json()
-            content = data.get('text') or data.get('message') or ""
+            content = data.get('response') or data.get('text') or data.get('message') or ""
             clean_json = content.replace('```json', '').replace('```', '').strip()
+            if not clean_json:
+                raise ValueError(f"Empty response from AI. Raw data keys: {list(data.keys())}")
             return json.loads(clean_json)
 
     async def clear_news(self):
@@ -149,7 +151,7 @@ async def sync_news_to_db():
         scraped_text = ""
         try:
             downloaded = trafilatura.fetch_url(url)
-            scraped_text = trafilatura.extract(downloaded) if downloaded else ""
+            scraped_text = trafilatura.extract(downloaded) or ""
         except: pass
 
         description = article.get('description') or ''
