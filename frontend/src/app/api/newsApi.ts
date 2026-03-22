@@ -97,12 +97,12 @@ export async function fetchNewsStoryClusters(): Promise<StoryCluster[]> {
   const records = extractRecords(payload)
 
   const sources = records.map(mapArticleToSource)
-  const latestTimestamp = records[0]?.date ?? new Date().toISOString()
+  const syncTimestamp = payload?.synced_at ?? records[0]?.date ?? new Date().toISOString()
 
   const cluster: StoryCluster = {
     id: LATEST_CLUSTER_ID,
     mainHeadline: LATEST_CLUSTER_TITLE,
-    timestamp: typeof latestTimestamp === 'string' ? latestTimestamp : String(latestTimestamp),
+    timestamp: typeof syncTimestamp === 'string' ? syncTimestamp : String(syncTimestamp),
     sources,
   }
 

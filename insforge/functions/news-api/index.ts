@@ -50,8 +50,13 @@ export default async function (req: Request): Promise<Response> {
     }
   }
 
+  // Use the DB insertion timestamp of the newest article as the sync time
+  const syncedAt = Array.isArray(articles) && articles.length > 0
+    ? (articles[0].created_at ?? null)
+    : null;
+
   return new Response(
-    JSON.stringify({ status: "success", articles, clusters }),
+    JSON.stringify({ status: "success", articles, clusters, synced_at: syncedAt }),
     { headers: corsHeaders }
   );
 }

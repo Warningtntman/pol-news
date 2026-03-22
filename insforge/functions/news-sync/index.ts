@@ -11,7 +11,7 @@
 const BASE_URL = (Deno.env.get("INSFORGE_BASE_URL") || Deno.env.get("INSFORGE_INTERNAL_URL") || "").replace(/\/$/, "");
 const API_KEY = Deno.env.get("API_KEY")!;
 const NEWSDATA_API_KEY = Deno.env.get("NEWSDATA_API_KEY")!;
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = "anthropic/claude-sonnet-4.6";
 
 const DB_HEADERS = {
   Authorization: `Bearer ${API_KEY}`,
@@ -201,9 +201,10 @@ export default async function (req: Request): Promise<Response> {
   const rawArticles: Record<string, unknown>[] = (newsJson.results || []).slice(0, 20);
 
   const skipKeywords = [
-    "listings", "ratings", "stocks", "forecast", "horoscope",
+    "listings", "rating", "ratings", "stocks", "stock", "forecast", "horoscope",
     "trading", "price", "nasdaq", "nyse", "dividend",
     "crypto", "bitcoin", "ethereum", "market", "shares", "earnings",
+    "otcmkts", "nyse:", "inc.", "ltd.", "equities", "reiterated",
   ];
 
   // 2. Scrape + bias analysis
@@ -221,6 +222,8 @@ export default async function (req: Request): Promise<Response> {
     let text = url ? await scrapeText(url) : "";
     if (text.length < 100) text = String(article.description || "").slice(0, 2000);
     else text = text.slice(0, 2000);
+    // Last resort: use the title so bias analysis always has something to work with
+    if (text.trim().length < 20) text = articleTitle;
 
     let bias = { left: 0, center: 100, right: 0 };
     if (text.trim().length > 20) {

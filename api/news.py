@@ -37,7 +37,7 @@ class InsForgeClient:
     async def analyze_bias(self, text: str):
         """Calls Claude Haiku 4.5 via InsForge Gateway"""
         payload = {
-            'model': 'claude-haiku-4-5-20251001',
+            'model': 'anthropic/claude-sonnet-4.6',
             'messages': [
                 {
                     "role": "system", 

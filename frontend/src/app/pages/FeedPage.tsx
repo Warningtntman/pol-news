@@ -79,6 +79,7 @@ export function FeedPage() {
       ? `Bias Engine updated ${lastSyncedAt.toLocaleString(undefined, {
           dateStyle: 'medium',
           timeStyle: 'short',
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         })}`
       : 'Bias Engine syncing...');
 
