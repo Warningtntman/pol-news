@@ -79,3 +79,24 @@ export async function fetchNewsStoryClusters(): Promise<StoryCluster[]> {
   return [cluster]
 }
 
+export async function searchNewsStoryClusters(query: string): Promise<StoryCluster[]> {
+  const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch /api/search (${res.status})`);
+  }
+
+  const payload = await res.json();
+  const records = extractRecords(payload);
+
+  const sources = records.map(mapArticleToSource);
+  const latestTimestamp = records[0]?.date ?? new Date().toISOString();
+
+  const cluster: StoryCluster = {
+    id: `search-${query}`,
+    mainHeadline: `Search Results: ${query}`,
+    timestamp: typeof latestTimestamp === 'string' ? latestTimestamp : String(latestTimestamp),
+    sources,
+  };
+
+  return [cluster];
+}
