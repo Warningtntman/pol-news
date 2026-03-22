@@ -6,6 +6,8 @@ import { assignUniqueFallbackSlots } from '../data/fallbackArticleImages';
 import { fetchNewsStoryClusters, searchNewsStoryClusters } from '../api/newsApi';
 import { Link } from 'react-router';
 
+type FeedSortMode = 'alphabetical' | 'country' | 'recent';
+
 export function FeedPage() {
   const [storyClusters, setStoryClusters] = useState<StoryClusterType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,6 +15,7 @@ export function FeedPage() {
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [sortMode, setSortMode] = useState<FeedSortMode>('recent');
 
   const loadData = async () => {
     setLoading(true);
@@ -83,9 +86,45 @@ export function FeedPage() {
         })}`
       : 'Bias Engine syncing...');
 
+  const displayedStoryClusters = useMemo(() => {
+    if (isSearching) return storyClusters;
+
+    const compareHeadline = (
+      a: StoryClusterType['sources'][number],
+      b: StoryClusterType['sources'][number],
+    ) => a.headline.localeCompare(b.headline, undefined, { sensitivity: 'base' });
+
+    const toTimestamp = (value?: string) => {
+      const ts = value ? Date.parse(value) : Number.NaN;
+      return Number.isFinite(ts) ? ts : Number.NEGATIVE_INFINITY;
+    };
+
+    return storyClusters.map((cluster) => {
+      const sortedSources = [...cluster.sources].sort((a, b) => {
+        if (sortMode === 'alphabetical') {
+          return compareHeadline(a, b);
+        }
+
+        if (sortMode === 'country') {
+          const countryCmp = (a.country ?? 'Unknown').localeCompare(
+            b.country ?? 'Unknown',
+            undefined,
+            { sensitivity: 'base' },
+          );
+          return countryCmp !== 0 ? countryCmp : compareHeadline(a, b);
+        }
+
+        const recentCmp = toTimestamp(b.publishedAt) - toTimestamp(a.publishedAt);
+        return recentCmp !== 0 ? recentCmp : compareHeadline(a, b);
+      });
+
+      return { ...cluster, sources: sortedSources };
+    });
+  }, [isSearching, sortMode, storyClusters]);
+
   const fallbackSlotByKey = useMemo(
-    () => assignUniqueFallbackSlots(storyClusters),
-    [storyClusters],
+    () => assignUniqueFallbackSlots(displayedStoryClusters),
+    [displayedStoryClusters],
   );
 
   return (
@@ -115,6 +154,19 @@ export function FeedPage() {
               </button>
             )}
           </form>
+
+          {!isSearching && (
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as FeedSortMode)}
+              className="w-full max-w-[220px] rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 outline-none focus:border-blue-500"
+              aria-label="Sort feed articles"
+            >
+              <option value="recent">Sort: Most Recent</option>
+              <option value="alphabetical">Sort: Alphabetical (A-Z)</option>
+              <option value="country">Sort: Country (A-Z)</option>
+            </select>
+          )}
         </div>
       </header>
 
@@ -141,14 +193,14 @@ export function FeedPage() {
           </div>
         ) : error ? (
           <div className="text-sm text-red-700">{error}</div>
-        ) : storyClusters.length === 0 || storyClusters[0].sources.length === 0 ? (
+        ) : displayedStoryClusters.length === 0 || displayedStoryClusters[0].sources.length === 0 ? (
           <div className="text-sm text-gray-600">
             {isSearching
               ? 'No news available for this search.'
               : 'No news available yet.'}
           </div>
         ) : (
-          storyClusters.map((cluster) => (
+          displayedStoryClusters.map((cluster) => (
             <StoryCluster
               key={cluster.id}
               cluster={cluster}

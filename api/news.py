@@ -100,6 +100,51 @@ insforge = InsForgeClient()
 
 # --- AUTOMATION LOGIC ---
 
+async def fetch_newsdata_articles(params: dict, target_count: int, timeout_seconds: int = 30, max_pages: int = 10):
+    """Fetch NewsData articles across pages until target_count or pagination ends."""
+    if target_count <= 0:
+        return [], False
+
+    collected = []
+    next_page = None
+    seen_pages = set()
+
+    async with httpx.AsyncClient(timeout=timeout_seconds) as client:
+        for _ in range(max_pages):
+            request_params = dict(params)
+            if next_page:
+                if next_page in seen_pages:
+                    print("NewsData pagination repeated page token. Stopping early.")
+                    break
+                seen_pages.add(next_page)
+                request_params["page"] = next_page
+
+            try:
+                resp = await client.get("https://newsdata.io/api/1/latest", params=request_params)
+                resp.raise_for_status()
+                data = resp.json()
+            except Exception as e:
+                print(f"NewsData request failed: {e}")
+                return collected[:target_count], True
+
+            if data.get("status") == "error":
+                print(f"NewsData API Error: {data}")
+                return collected[:target_count], True
+
+            results = data.get("results", [])
+            if isinstance(results, list):
+                collected.extend(results)
+
+            if len(collected) >= target_count:
+                break
+
+            next_page = data.get("nextPage")
+            if not next_page:
+                break
+
+    return collected[:target_count], False
+
+
 async def sync_news_to_db():
     """Main task: Fetch (Filtered) -> Scrape -> AI -> Clean -> Save"""
     print("Starting Filtered News Sync (US Politics Only)...")
@@ -115,17 +160,9 @@ async def sync_news_to_db():
         "country": "us"
     }
     
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.get("https://newsdata.io/api/1/latest", params=params)
-        data = resp.json()
-        
-        # SAFETY CHECK 1: Prevent NewsData API crashes
-        if data.get('status') == 'error':
-            print(f"NewsData API Error: {data}")
-            return
-            
-        results = data.get('results', [])
-        raw_articles = results[:10] if isinstance(results, list) else []
+    raw_articles, had_error = await fetch_newsdata_articles(params, target_count=30, timeout_seconds=30)
+    if had_error and not raw_articles:
+        return
 
     db_entries = []
     for article in raw_articles:
@@ -242,16 +279,10 @@ async def search_live_news(q: str = Query(..., description="Search keyword")):
         "qInTitle": q 
     }
     
-    # 1. Fetch from NewsData (Fast)
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.get("https://newsdata.io/api/1/latest", params=params)
-        data = resp.json()
-        
-        if data.get('status') == 'error':
-            return {"status": "error", "message": "NewsData API Error", "articles": []}
-            
-        results = data.get('results', [])
-        raw_articles = results[:6] if isinstance(results, list) else []
+    # 1. Fetch from NewsData (Fast, paginated to reach target count)
+    raw_articles, had_error = await fetch_newsdata_articles(params, target_count=10, timeout_seconds=10)
+    if had_error and not raw_articles:
+        return {"status": "error", "message": "NewsData API Error", "articles": []}
         
     sem = asyncio.Semaphore(4) # Allow 4 concurrent AI calls
 
@@ -299,7 +330,7 @@ async def search_live_news(q: str = Query(..., description="Search keyword")):
                 "bias_right": bias.get('right', 0)
             }
 
-    # Execute all 6 processing tasks simultaneously
+    # Execute all processing tasks simultaneously
     tasks = [process_single_article(article) for article in raw_articles]
     processed_results = await asyncio.gather(*tasks)
     

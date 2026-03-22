@@ -62,10 +62,66 @@ function faviconUrl(url: string): string | undefined {
   }
 }
 
+function inferCountryFromPublisherUrl(publisher: string, url: string): string {
+  const publisherLower = publisher.toLowerCase()
+  let host = ''
+  try {
+    host = new URL(url).hostname.toLowerCase()
+  } catch {
+    host = ''
+  }
+
+  const domainRules: Array<{ needle: string; country: string }> = [
+    { needle: '.co.uk', country: 'UK' },
+    { needle: '.gov', country: 'US' },
+    { needle: 'reuters.com', country: 'UK' },
+    { needle: 'bbc.', country: 'UK' },
+    { needle: 'theguardian.com', country: 'UK' },
+    { needle: 'aljazeera.com', country: 'Qatar' },
+    { needle: 'abcnews.go.com', country: 'US' },
+    { needle: 'nytimes.com', country: 'US' },
+    { needle: 'washingtonpost.com', country: 'US' },
+    { needle: 'wsj.com', country: 'US' },
+    { needle: 'foxnews.com', country: 'US' },
+    { needle: 'cnn.com', country: 'US' },
+    { needle: 'npr.org', country: 'US' },
+  ]
+
+  for (const rule of domainRules) {
+    if (host.includes(rule.needle)) return rule.country
+  }
+
+  const publisherRules: Array<{ needle: string; country: string }> = [
+    { needle: 'new york times', country: 'US' },
+    { needle: 'washington post', country: 'US' },
+    { needle: 'wall street journal', country: 'US' },
+    { needle: 'associated press', country: 'US' },
+    { needle: 'ap', country: 'US' },
+    { needle: 'fox news', country: 'US' },
+    { needle: 'cnn', country: 'US' },
+    { needle: 'npr', country: 'US' },
+    { needle: 'bloomberg', country: 'US' },
+    { needle: 'cnbc', country: 'US' },
+    { needle: 'bbc', country: 'UK' },
+    { needle: 'the guardian', country: 'UK' },
+    { needle: 'reuters', country: 'UK' },
+  ]
+
+  for (const rule of publisherRules) {
+    if (publisherLower.includes(rule.needle)) return rule.country
+  }
+
+  return 'Unknown'
+}
+
 function mapArticleToSource(record: any): SourceArticle {
   const publisher = String(record?.source ?? record?.publisher ?? '').trim()
   const headline = String(record?.title ?? record?.headline ?? '').trim()
   const url = String(record?.link ?? record?.url ?? '#')
+  const publishedAtRaw = record?.date ?? record?.pubDate ?? record?.published_at
+  const publishedAt =
+    typeof publishedAtRaw === 'string' && publishedAtRaw.trim() ? publishedAtRaw.trim() : undefined
+  const country = inferCountryFromPublisherUrl(publisher, url)
 
   const publisherLogo = publisher ? publisher.slice(0, 3).toUpperCase() : 'N/A'
 
@@ -81,8 +137,16 @@ function mapArticleToSource(record: any): SourceArticle {
     imageUrl,
     headline,
     url,
+    publishedAt,
+    country,
     bias: mapBias(record),
   }
+}
+
+function sortSourcesByHeadlineAsc(sources: SourceArticle[]): SourceArticle[] {
+  return [...sources].sort((a, b) =>
+    a.headline.localeCompare(b.headline, undefined, { sensitivity: 'base' }),
+  )
 }
 
 export async function fetchNewsStoryClusters(): Promise<StoryCluster[]> {
@@ -120,7 +184,7 @@ export async function searchNewsStoryClusters(query: string): Promise<StoryClust
   const payload = await res.json()
   const records = extractRecords(payload)
 
-  const sources = records.map(mapArticleToSource)
+  const sources = sortSourcesByHeadlineAsc(records.map(mapArticleToSource))
   const latestTimestamp = records[0]?.date ?? new Date().toISOString()
 
   const cluster: StoryCluster = {

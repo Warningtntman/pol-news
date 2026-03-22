@@ -14,6 +14,8 @@ export interface SourceArticle {
   headline: string;
   bias: BiasScore;
   url: string;
+  publishedAt?: string;
+  country?: string;
 }
 
 export interface StoryCluster {
