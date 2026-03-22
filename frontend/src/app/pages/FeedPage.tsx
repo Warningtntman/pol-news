@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Zap, User } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { StoryCluster } from '../components/StoryCluster';
 import type { StoryCluster as StoryClusterType } from '../data/mockData';
 import { fetchNewsStoryClusters } from '../api/newsApi';
@@ -9,6 +9,7 @@ export function FeedPage() {
   const [storyClusters, setStoryClusters] = useState<StoryClusterType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -16,7 +17,10 @@ export function FeedPage() {
     (async () => {
       try {
         const data = await fetchNewsStoryClusters();
-        if (!cancelled) setStoryClusters(data);
+        if (!cancelled) {
+          setStoryClusters(data);
+          setLastSyncedAt(new Date());
+        }
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : String(e));
@@ -30,25 +34,23 @@ export function FeedPage() {
     };
   }, []);
 
-  const updatedText = storyClusters[0]?.timestamp
-    ? `Bias Engine updated ${storyClusters[0].timestamp}`
-    : 'Bias Engine syncing...';
+  const updatedText =
+    lastSyncedAt != null
+      ? `Bias Engine updated ${lastSyncedAt.toLocaleString(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        })}`
+      : 'Bias Engine syncing...';
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-['Inter']">
       {/* Top Nav */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center">
           <Link to="/">
             <h1 className="font-['Merriweather'] font-bold text-2xl text-gray-900 hover:text-blue-600 transition-colors">
               Pol-News
             </h1>
-          </Link>
-          <Link 
-            to="/dashboard"
-            className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
-          >
-            <User className="w-5 h-5 text-gray-700" />
           </Link>
         </div>
       </header>

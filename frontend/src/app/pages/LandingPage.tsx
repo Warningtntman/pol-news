@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Eye, Scale, Users, Sparkles, ArrowRight } from 'lucide-react';
+import { Eye, Scale, Users, Layers, ArrowRight } from 'lucide-react';
 
 export function LandingPage() {
   return (
@@ -85,15 +85,15 @@ export function LandingPage() {
 
           {/* Feature 3 */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
-              <Sparkles className="w-6 h-6 text-red-600" />
+            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
+              <Layers className="w-6 h-6 text-gray-600" />
             </div>
             <h4 className="font-['Merriweather'] font-bold text-xl text-gray-900 mb-3">
-              Find Your True Stance
+              Compare Framing Side by Side
             </h4>
             <p className="text-gray-600 leading-relaxed">
-              Take quick quizzes on real issues. Discover where you actually stand—
-              and which politicians share your views.
+              See how headlines and emphasis shift across outlets covering the same event—
+              so you notice what changes, not just what agrees with you.
             </p>
           </div>
         </div>
