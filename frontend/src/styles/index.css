@@ -12,8 +12,8 @@
   display: none;
 }
 
-/* Scrolling background animation */
-@keyframes scroll-horizontal {
+/* Mission marquees: duplicated image strip, animate -50% = one full cycle */
+@keyframes marquee-left {
   0% {
     transform: translateX(0);
   }
@@ -22,6 +22,26 @@
   }
 }
 
-.animate-scroll-bg {
-  animation: scroll-horizontal 25s linear infinite;
+@keyframes marquee-right {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-marquee-row-1 {
+  animation: marquee-left 40s linear infinite;
+  animation-fill-mode: both;
+}
+
+.animate-marquee-row-2 {
+  animation: marquee-right 55s linear infinite;
+  animation-fill-mode: both;
+}
+
+.animate-marquee-row-3 {
+  animation: marquee-left 45s linear infinite;
+  animation-fill-mode: both;
 }

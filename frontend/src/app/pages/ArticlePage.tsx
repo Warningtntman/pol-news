@@ -36,7 +36,7 @@ export function ArticlePage() {
   const article = story?.sources.find((a) => a.id === articleId);
 
   if (loading) {
-    return <div className="min-h-screen p-6 text-sm text-gray-600">Loading article...</div>;
+    return <div className="min-h-screen p-6 font-['Inter'] text-sm text-gray-600">Loading article...</div>;
   }
 
   if (error) {
@@ -44,7 +44,7 @@ export function ArticlePage() {
   }
 
   if (!article || !story) {
-    return <div className="min-h-screen p-6 text-sm text-gray-600">Article not found</div>;
+    return <div className="min-h-screen p-6 font-['Inter'] text-sm text-gray-600">Article not found</div>;
   }
 
   const hasExternalUrl = article.url && article.url !== '#';
@@ -81,7 +81,7 @@ export function ArticlePage() {
           {article.headline}
         </h1>
 
-        <div className="prose prose-lg max-w-none">
+        <div className="prose prose-lg max-w-none font-['Inter']">
           <p className="text-gray-700 leading-relaxed mb-6">
             Source bias is calculated from the article content. Read the original article below:
           </p>

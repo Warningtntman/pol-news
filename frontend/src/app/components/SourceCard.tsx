@@ -20,7 +20,7 @@ interface SourceCardProps {
 }
 
 const CARD_CLASS =
-  'flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md';
+  "font-['Inter'] flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md";
 
 export function SourceCard({
   source,
@@ -78,22 +78,22 @@ export function SourceCard({
                 onError={() => setIconError(true)}
               />
             ) : (
-              <span className={`font-['Inter'] text-xs font-semibold ${accent.textClass}`}>
+              <span className={`text-xs font-semibold ${accent.textClass}`}>
                 {source.publisherLogo}
               </span>
             )}
           </div>
           <div className="min-w-0">
-            <span className="block truncate font-['Inter'] text-sm font-medium text-gray-900">
+            <span className="block truncate text-sm font-medium text-gray-900">
               {source.publisher}
             </span>
-            <span className="block truncate font-['Inter'] text-xs font-medium text-slate-500">
+            <span className="block truncate text-xs font-medium text-slate-500">
               {storyTitle}
             </span>
           </div>
         </div>
 
-        <h3 className="mb-4 line-clamp-3 flex-1 font-['Inter'] text-base font-semibold text-gray-900">
+        <h3 className="mb-4 line-clamp-3 flex-1 text-base font-semibold text-gray-900">
           {source.headline}
         </h3>
 

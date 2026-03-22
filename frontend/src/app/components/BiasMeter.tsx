@@ -11,7 +11,7 @@ interface BiasMetProps {
 
 export function BiasMeter({ bias, className = '' }: BiasMetProps) {
   return (
-    <div className={`flex flex-col gap-1.5 ${className}`}>
+    <div className={`font-['Inter'] flex flex-col gap-1.5 ${className}`}>
       <div className="flex h-2 w-full overflow-hidden rounded-full">
         <div
           className="h-full min-w-0 transition-all duration-300"
@@ -37,26 +37,26 @@ export function BiasMeter({ bias, className = '' }: BiasMetProps) {
       </div>
       <div className="grid grid-cols-3 gap-1 text-center">
         <div className="flex flex-col gap-0.5">
-          <span className="font-['Inter'] text-[10px] font-medium uppercase tracking-wide text-gray-500">
+          <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500">
             Left
           </span>
-          <span className="font-['Inter'] text-xs font-semibold" style={{ color: LEFT }}>
+          <span className="text-xs font-semibold" style={{ color: LEFT }}>
             {bias.left}%
           </span>
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className="font-['Inter'] text-[10px] font-medium uppercase tracking-wide text-gray-500">
+          <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500">
             Center
           </span>
-          <span className="font-['Inter'] text-xs font-semibold" style={{ color: CENTER }}>
+          <span className="text-xs font-semibold" style={{ color: CENTER }}>
             {bias.center}%
           </span>
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className="font-['Inter'] text-[10px] font-medium uppercase tracking-wide text-gray-500">
+          <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500">
             Right
           </span>
-          <span className="font-['Inter'] text-xs font-semibold" style={{ color: RIGHT }}>
+          <span className="text-xs font-semibold" style={{ color: RIGHT }}>
             {bias.right}%
           </span>
         </div>
