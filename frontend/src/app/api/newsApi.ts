@@ -1,7 +1,13 @@
-import type { BiasScore, SourceArticle, StoryCluster } from '../data/mockData'
+import type {
+  ArticlePerspectives,
+  BiasScore,
+  SourceArticle,
+  StoryCluster,
+} from '../data/mockData'
 
 const LATEST_CLUSTER_ID = 'latest'
 const LATEST_CLUSTER_TITLE = 'Latest Political News'
+const SEARCH_PENDING_PREFIX = 'pol-news:pending-search:'
 
 /** Same default as vite.config proxy target; avoids 404 when proxy is bypassed (e.g. vite preview). */
 function apiUrl(path: string): string {
@@ -62,6 +68,14 @@ function faviconUrl(url: string): string | undefined {
   }
 }
 
+function mapPerspectives(record: any): ArticlePerspectives | undefined {
+  const left = String(record?.summary_left ?? '').trim()
+  const center = String(record?.summary_center ?? '').trim()
+  const right = String(record?.summary_right ?? '').trim()
+  if (!left && !center && !right) return undefined
+  return { left, center, right }
+}
+
 function mapArticleToSource(record: any): SourceArticle {
   const publisher = String(record?.source ?? record?.publisher ?? '').trim()
   const headline = String(record?.title ?? record?.headline ?? '').trim()
@@ -73,6 +87,15 @@ function mapArticleToSource(record: any): SourceArticle {
   const imageUrl =
     typeof rawImage === 'string' && rawImage.trim() ? rawImage.trim() : undefined
 
+  const rawSummary = record?.content_summary
+  const contentSummary =
+    typeof rawSummary === 'string' && rawSummary.trim() ? rawSummary.trim() : undefined
+  const rawDescription = record?.description
+  const description =
+    typeof rawDescription === 'string' && rawDescription.trim()
+      ? rawDescription.trim()
+      : undefined
+
   return {
     id: String(record?.article_id ?? record?.id ?? ''),
     publisher,
@@ -82,6 +105,9 @@ function mapArticleToSource(record: any): SourceArticle {
     headline,
     url,
     bias: mapBias(record),
+    description,
+    contentSummary,
+    perspectives: mapPerspectives(record),
   }
 }
 
@@ -127,4 +153,33 @@ export async function searchNewsStoryClusters(query: string): Promise<StoryClust
   }
 
   return [cluster]
+}
+
+export async function ingestSearchArticle(source: SourceArticle): Promise<void> {
+  const res = await fetch(apiUrl('/api/article/ingest'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      article_id: source.id,
+      title: source.headline,
+      link: source.url,
+      source: source.publisher,
+      image: source.imageUrl,
+      description: source.description ?? source.contentSummary ?? source.headline,
+    }),
+  })
+  if (!res.ok) {
+    let detail = ''
+    try {
+      const payload = await res.json()
+      detail = String(payload?.detail ?? '').trim()
+    } catch {
+      // Ignore parse errors and fall back to status text.
+    }
+    throw new Error(detail || `Failed to ingest article (${res.status})`)
+  }
+}
+
+export function getPendingSearchArticleStorageKey(articleId: string): string {
+  return `${SEARCH_PENDING_PREFIX}${articleId}`
 }

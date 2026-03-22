@@ -4,6 +4,12 @@ export interface BiasScore {
   right: number;
 }
 
+export interface ArticlePerspectives {
+  left: string;
+  center: string;
+  right: string;
+}
+
 export interface SourceArticle {
   id: string;
   publisher: string;
@@ -14,6 +20,12 @@ export interface SourceArticle {
   headline: string;
   bias: BiasScore;
   url: string;
+  /** Raw provider description, used for on-demand ingest from search results */
+  description?: string;
+  /** Neutral excerpt from scraper or NewsData */
+  contentSummary?: string;
+  /** Hypothetical L / C / R narrative summaries from LLM */
+  perspectives?: ArticlePerspectives;
 }
 
 export interface StoryCluster {

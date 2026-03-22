@@ -2,15 +2,12 @@ import { useMemo, useState } from 'react';
 import { SourceArticle } from '../data/mockData';
 import { BiasMeter } from './BiasMeter';
 import { Link } from 'react-router';
+import { getPendingSearchArticleStorageKey } from '../api/newsApi';
 import { getPublisherAccent } from '../utils/publisherStyle';
 import {
   getFallbackArticleImageAt,
   getFallbackBySlot,
 } from '../data/fallbackArticleImages';
-
-function isExternalArticleUrl(url: string): boolean {
-  return /^https?:\/\//i.test(url.trim());
-}
 
 interface SourceCardProps {
   source: SourceArticle;
@@ -42,7 +39,7 @@ export function SourceCard({
       : getFallbackArticleImageAt(thumbSeed, 0);
 
   const accent = getPublisherAccent(source.publisher);
-  const external = isExternalArticleUrl(source.url);
+  const isSearchResult = storyId.startsWith('search-');
 
   const cardInner = (
     <>
@@ -104,19 +101,28 @@ export function SourceCard({
     </>
   );
 
-  if (external) {
+  if (isSearchResult) {
+    const targetPath = `/article/latest/${source.id}`;
     return (
       <a
-        href={source.url}
+        href={targetPath}
         className={CARD_CLASS}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => {
+          try {
+            sessionStorage.setItem(getPendingSearchArticleStorageKey(source.id), JSON.stringify(source));
+          } catch {
+            // Continue navigation even if storage is unavailable.
+          }
+        }}
       >
         {cardInner}
       </a>
     );
   }
 
+  /* For cached feed articles, open the in-app article view directly. */
   return (
     <Link to={`/article/${storyId}/${source.id}`} className={CARD_CLASS}>
       {cardInner}
