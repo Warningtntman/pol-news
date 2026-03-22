@@ -1,43 +1,59 @@
-# Project Overview
-Pol News is a comprehensive news aggregation platform that provides users with the latest news articles from various sources. The goal of this project is to create a user-friendly interface that delivers real-time news updates.
+# pol-news
 
-# Project Structure
-- /src: Contains the source code of the application.
-- /public: Static files such as images, stylesheets, etc.
-- /tests: Unit and integration tests for the application.
-- /docs: Documentation for project setup and usage.
+> See the same story through every lens. AI-powered political news bias analysis across multiple sources.
 
-# Technology Stack
-- Frontend: React.js
-- Backend: Node.js with Express
-- Database: MongoDB
-- Other Tools: Webpack, Babel, Jest
+pol-news clusters US political news stories from different outlets and uses Claude AI to analyze the political lean of each article — giving you a left/center/right breakdown so you can see how different publishers frame the same event.
 
-# Getting Started
-## Prerequisites
-- Node.js installed on your machine
-- MongoDB instance running
+---
 
-## Installation
-1. Clone the repository:
-   ```
-   git clone https://github.com/Warningtntman/pol-news.git
-   ```
-2. Navigate to the directory:
-   ```
-   cd pol-news
-   ```
-3. Install dependencies:
-   ```
-   npm install
-   ```
+## Features
 
-# Usage Guidelines
-To start the application, run:
+- **Bias Meter** — Visual left/center/right percentage breakdown for every article
+- **Live search** — Real-time search with on-the-fly AI bias analysis
+- **Auto-refresh** — Background pipeline fetches and analyzes new articles every 12 hours
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.10+
+- Node.js 18+ and npm (or pnpm)
+- API keys for NewsData.io and InsForge
+
+### Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+NEWSDATA_API_KEY=your_newsdata_api_key
+INSFORGE_BASE_URL=your_insforge_base_url
+INSFORGE_API_KEY=your_insforge_api_key
 ```
-npm start
-```
-Visit `http://localhost:3000` in your browser to access the application.
 
-# Author Information
-This project was developed by ibansal9-blip.
+### Backend
+
+```bash
+pip install -r requirements.txt
+uvicorn api.news:app --reload
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The Vite dev server runs on `http://localhost:5173` and proxies `/api/*` requests to the backend at port 8000.
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/news` | Returns stored clustered articles from the database |
+| `GET` | `/api/search?q=<query>` | Live search with real-time bias analysis |
