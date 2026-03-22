@@ -57,8 +57,11 @@ function mapArticleToSource(record: any): SourceArticle {
   }
 }
 
+const NEWS_URL = import.meta.env.VITE_NEWS_URL ?? '/api/news'
+const SEARCH_URL = import.meta.env.VITE_SEARCH_URL ?? '/api/search'
+
 export async function fetchNewsStoryClusters(): Promise<StoryCluster[]> {
-  const res = await fetch('/api/news')
+  const res = await fetch(NEWS_URL)
   if (!res.ok) {
     throw new Error(`Failed to fetch /api/news (${res.status})`)
   }
@@ -80,7 +83,7 @@ export async function fetchNewsStoryClusters(): Promise<StoryCluster[]> {
 }
 
 export async function searchNewsStoryClusters(query: string): Promise<StoryCluster[]> {
-  const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+  const res = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(query)}`);
   if (!res.ok) {
     throw new Error(`Failed to fetch /api/search (${res.status})`);
   }

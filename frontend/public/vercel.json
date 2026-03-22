@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/news",
+      "destination": "https://azxev92w.us-west.insforge.app/functions/news-api"
+    },
+    {
+      "source": "/api/search",
+      "destination": "https://azxev92w.us-west.insforge.app/functions/news-search"
+    }
+  ]
+}
