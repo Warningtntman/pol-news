@@ -17,11 +17,11 @@ export function useSearch() {
     lastQuery: '',
   });
 
-  const search = useCallback(async (query: string) => {
+  const search = useCallback(async (query: string, description = '') => {
     if (!query.trim()) return;
     setState({ data: null, isLoading: true, error: null, lastQuery: query });
     try {
-      const data = await searchNews(query.trim());
+      const data = await searchNews(query.trim(), description);
       setState({ data, isLoading: false, error: null, lastQuery: query });
     } catch (err) {
       setState({

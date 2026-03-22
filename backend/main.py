@@ -7,7 +7,7 @@ app = FastAPI(title="Political Bias Detector", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origin_regex=r"http://localhost:\d+",
     allow_methods=["GET"],
     allow_headers=["*"],
 )

@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash c:/Users/ZachF/pol-news/dev.sh)",
+      "Bash(pkill -f \"uvicorn main:app\")",
+      "Bash(pkill -f \"vite\")",
+      "Bash(curl -s \"http://localhost:8000/api/search?q=politics&max_results=3\")",
+      "Bash(curl -s \"https://newsdata.io/api/1/news?apikey=pub_2ccdc2c98e1d46fe8e669d362b255088&q=politics&language=en\")",
+      "Bash(curl -s --max-time 15 \"https://newsdata.io/api/1/news?apikey=pub_2ccdc2c98e1d46fe8e669d362b255088&q=politics&language=en\")",
+      "Bash(curl -s --max-time 20 \"http://localhost:8000/api/search?q=politics&max_results=3\")",
+      "Bash(curl -s --max-time 30 \"http://localhost:8000/api/search?q=politics&max_results=3\")",
+      "Bash(curl -s --max-time 30 \"http://localhost:8000/api/search?q=politics&max_results=2\")",
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(curl -s --max-time 30 \"http://localhost:8000/health\")",
+      "Bash(source .venv/Scripts/activate)",
+      "Bash(uvicorn main:app --reload --port 8000)",
+      "Bash(curl -s --max-time 30 \"http://localhost:8000/api/search?q=trump&max_results=2\")",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /F /PID 21912 /PID 22536 /PID 33368 /PID 25492 /PID 9496)",
+      "Bash(cmd /c \"taskkill /F /PID 21912 & taskkill /F /PID 22536 & taskkill /F /PID 33368 & taskkill /F /PID 25492 & taskkill /F /PID 9496\")",
+      "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''''netstat -ano ^| findstr :8000 ^| findstr LISTENING''''\\) do taskkill /F /PID %a\")",
+      "Bash(powershell -Command \"Get-Process -Id 9496,21912,22536,25492,33368 -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep 2; Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_-Force -ErrorAction SilentlyContinue }; Write-Host ''Done''\")",
+      "Bash(powershell -Command \"Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force; Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host ''Done''\")",
+      "Bash(bash /c/Users/ZachF/pol-news/dev.sh)",
+      "Bash(curl -s --max-time 20 \"http://localhost:8000/api/search?q=trump&max_results=2\")",
+      "Bash(npm run:*)",
+      "Bash(uvicorn main:app --reload --port 8001)",
+      "Bash(curl -s --max-time 10 http://localhost:8001/api/health)",
+      "Bash(curl -s --max-time 10 http://localhost:8001/)"
+    ]
+  }
+}

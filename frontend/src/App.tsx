@@ -26,7 +26,7 @@ function App() {
       {/* Main content */}
       <main className="mx-auto max-w-4xl px-4 py-8">
         <div className="mb-8">
-          <SearchBar onSearch={search} isLoading={isLoading} />
+          <SearchBar onSearch={(q, d) => search(q, d)} isLoading={isLoading} />
         </div>
 
         {/* Loading */}

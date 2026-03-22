@@ -4,7 +4,7 @@ import logging
 import re
 from typing import Optional
 
-import anthropic
+import httpx
 
 import cache
 from config import settings
@@ -12,10 +12,9 @@ from models.article import Article, BiasResult
 
 logger = logging.getLogger(__name__)
 
-_client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
-_semaphore = asyncio.Semaphore(5)
+_semaphore = asyncio.Semaphore(1)
 
-SYSTEM_PROMPT = """You are a political media bias analyst. Analyze article content and return a JSON object estimating the political bias of the text.
+_SYSTEM = """You are a political media bias analyst. Analyze article content and return a JSON object estimating the political bias of the text.
 
 Rules:
 - "left": progressive, liberal, or left-leaning framing, language, or source selection.
@@ -26,9 +25,10 @@ Rules:
 - Return ONLY a JSON object with exactly these three keys: left, center, right.
 - No explanation. No markdown. No extra keys. Just the JSON.
 
-Example output: {"left": 15, "center": 70, "right": 15}"""
+Example output: {"left": 40, "center": 20, "right": 40}"""
 
 _SENTINEL = BiasResult(left=0, center=100, right=0)
+_GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:generateContent"
 
 
 def _parse_response(text: str) -> BiasResult:
@@ -47,31 +47,51 @@ def _parse_response(text: str) -> BiasResult:
     )
 
 
-async def analyze_article(article: Article) -> tuple[BiasResult, Optional[str]]:
+async def analyze_article(article: Article, topic_description: str = "") -> tuple[BiasResult, Optional[str]]:
     """Returns (BiasResult, error_message_or_None)."""
     cached = cache.get(article.url)
     if cached is not None:
         return cached, None
 
     content_snippet = (article.content or article.description or article.title)[:3000]
+    context = f"Topic context: {topic_description}\n\n" if topic_description.strip() else ""
     user_message = (
         f"Analyze the political bias of the following news article.\n\n"
+        f"{context}"
         f"Title: {article.title}\n\n"
         f"Content: {content_snippet}\n\n"
         f"Return your bias rating as a JSON object."
     )
 
+    payload = {
+        "contents": [{"parts": [{"text": f"{_SYSTEM}\n\n{user_message}"}]}],
+        "generationConfig": {"maxOutputTokens": 512},
+    }
+
     async with _semaphore:
-        try:
-            message = await _client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=64,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": user_message}],
-            )
-            result = _parse_response(message.content[0].text)
-            cache.set(article.url, result)
-            return result, None
-        except Exception as exc:
-            logger.error("Bias analysis failed for %s: %s", article.url, exc)
-            return _SENTINEL, f"Analysis unavailable for '{article.title[:60]}': {exc}"
+        for attempt in range(3):
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.post(
+                        _GEMINI_URL,
+                        params={"key": settings.gemini_api_key},
+                        json=payload,
+                    )
+                    if resp.status_code == 429:
+                        await asyncio.sleep(20 * (attempt + 1))
+                        continue
+                    resp.raise_for_status()
+                    data = resp.json()
+                    text = data["candidates"][0]["content"]["parts"][0]["text"]
+                result = _parse_response(text)
+                cache.set(article.url, result)
+                await asyncio.sleep(2)  # light throttle for Gemma free tier
+                return result, None
+            except (json.JSONDecodeError, KeyError, ValueError):
+                return _SENTINEL, None  # bad model output — fail silently
+            except Exception as exc:
+                if attempt == 2:
+                    logger.error("Bias analysis failed for %s: %s", article.url, exc)
+                    return _SENTINEL, f"Analysis unavailable for '{article.title[:60]}': {exc}"
+                await asyncio.sleep(5)
+        return _SENTINEL, f"Analysis unavailable for '{article.title[:60]}': rate limited"

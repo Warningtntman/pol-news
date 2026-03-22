@@ -34,7 +34,8 @@ async def cache_stats():
 @router.get("/search", response_model=SearchResponse)
 async def search(
     q: str = Query(..., min_length=1, description="Search query"),
-    max_results: int = Query(default=10, ge=1, le=25),
+    description: str = Query(default="", description="Optional topic description for better bias context"),
+    max_results: int = Query(default=25, ge=1, le=50),
 ):
     try:
         articles = await newsdata.fetch_articles(q, max_results)
@@ -52,10 +53,15 @@ async def search(
             sources=[],
         )
 
-    # Analyze all articles concurrently
-    results = await asyncio.gather(
-        *[bias_analyzer.analyze_article(a) for a in articles]
+    # Analyze up to 10 articles for bias; rest get sentinel
+    MAX_BIAS = 10
+    to_analyze = articles[:MAX_BIAS]
+    skipped = articles[MAX_BIAS:]
+    analyzed_results = await asyncio.gather(
+        *[bias_analyzer.analyze_article(a, description) for a in to_analyze]
     )
+    _default = BiasResult(left=0, center=100, right=0)
+    results = list(analyzed_results) + [(_default, None) for _ in skipped]
 
     analyzed: List[AnalyzedArticle] = []
     errors: List[str] = []
