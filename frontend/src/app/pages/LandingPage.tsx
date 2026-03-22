@@ -20,32 +20,58 @@ export function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <div className="mb-6">
-          <span className="inline-block px-4 py-1.5 bg-blue-50 text-blue-700 text-sm font-semibold rounded-full mb-4">
-            Beyond the Echo Chamber
-          </span>
-        </div>
-        
-        <h2 className="font-['Merriweather'] font-bold text-5xl md:text-6xl text-gray-900 mb-6 leading-tight">
-          See Every Side of <br />
-          <span className="bg-gradient-to-r from-blue-600 via-gray-600 to-red-600 bg-clip-text text-transparent">
-            Every Story
-          </span>
-        </h2>
-        
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-          Pol-News doesn't tell you what to think. We show you how every major news source 
-          covers the same story—so you can form your own informed opinion.
-        </p>
+      <section className="relative max-w-4xl mx-auto px-4 py-16 text-center bg-slate-50/50">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-90"
+          style={{
+            backgroundImage:
+              'radial-gradient(ellipse 85% 55% at 50% 0%, rgba(148, 163, 184, 0.28), transparent 55%)',
+          }}
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+          aria-hidden
+        />
+        <div className="relative">
+          <div className="mb-6">
+            <span className="inline-block px-4 py-1.5 bg-blue-50 text-blue-700 text-sm font-semibold rounded-full mb-4">
+              Beyond the Echo Chamber
+            </span>
+          </div>
 
-        <Link
-          to="/feed"
-          className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg rounded-xl transition-colors shadow-lg hover:shadow-xl"
-        >
-          Start Exploring
-          <ArrowRight className="w-5 h-5" />
-        </Link>
+          <h2 className="font-['Merriweather'] font-bold text-5xl md:text-6xl text-gray-900 mb-6 leading-tight">
+            See Every Side of <br />
+            <span
+              style={{
+                backgroundImage: 'linear-gradient(90deg, #2563EB 0%, #94A3B8 50%, #DC2626 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+              }}
+            >
+              Every Story
+            </span>
+          </h2>
+
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+            Pol-News doesn't tell you what to think. We show you how every major news source
+            covers the same story—so you can form your own informed opinion.
+          </p>
+
+          <Link
+            to="/feed"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg rounded-xl transition-all shadow-md shadow-slate-900/15 hover:shadow-lg hover:shadow-slate-900/20"
+          >
+            Start Exploring
+            <ArrowRight className="w-5 h-5" />
+          </Link>
+        </div>
       </section>
 
       {/* How It Works */}
@@ -168,27 +194,29 @@ export function LandingPage() {
           </div>
         </div>
 
-        <div className="max-w-3xl mx-auto px-4 py-16 text-center relative z-10">
-          <Users className="w-12 h-12 text-blue-600 mx-auto mb-6" />
-          
-          <h3 className="font-['Merriweather'] font-bold text-3xl text-gray-900 mb-6">
-            Our Mission
-          </h3>
-          
-          <p className="text-lg text-gray-700 leading-relaxed mb-4">
-            In an era of increasing polarization, Pol-News believes that access to 
-            multiple perspectives isn't just valuable—it's essential to democracy.
-          </p>
-          
-          <p className="text-lg text-gray-700 leading-relaxed mb-4">
-            We don't curate your news feed based on what keeps you clicking. We don't 
-            hide sources that challenge your beliefs. Instead, we make it radically 
-            easy to see how <em>everyone</em> is covering the same event.
-          </p>
-          
-          <p className="text-lg font-semibold text-gray-900">
-            Because informed citizens deserve the full picture.
-          </p>
+        <div className="relative z-10 mx-auto max-w-3xl px-4 py-16 text-center">
+          <div className="rounded-2xl bg-white/90 px-6 py-8 shadow-sm backdrop-blur-sm md:px-8 md:py-10">
+            <Users className="mx-auto mb-6 h-12 w-12 text-blue-600" />
+
+            <h3 className="mb-6 font-['Merriweather'] text-3xl font-bold text-gray-900">
+              Our Mission
+            </h3>
+
+            <p className="mb-4 text-lg leading-relaxed text-gray-700 drop-shadow-sm [text-shadow:0_1px_2px_rgba(255,255,255,0.9)]">
+              In an era of increasing polarization, Pol-News believes that access to multiple
+              perspectives isn't just valuable—it's essential to democracy.
+            </p>
+
+            <p className="mb-4 text-lg leading-relaxed text-gray-700 drop-shadow-sm [text-shadow:0_1px_2px_rgba(255,255,255,0.9)]">
+              We don't curate your news feed based on what keeps you clicking. We don't hide
+              sources that challenge your beliefs. Instead, we make it radically easy to see
+              how <em>everyone</em> is covering the same event.
+            </p>
+
+            <p className="text-lg font-semibold text-gray-900 drop-shadow-sm [text-shadow:0_1px_2px_rgba(255,255,255,0.95)]">
+              Because informed citizens deserve the full picture.
+            </p>
+          </div>
         </div>
       </section>
 

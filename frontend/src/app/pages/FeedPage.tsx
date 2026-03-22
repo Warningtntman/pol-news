@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Zap, Search, X, Loader2 } from 'lucide-react';
 import { StoryCluster } from '../components/StoryCluster';
 import type { StoryCluster as StoryClusterType } from '../data/mockData';
+import { assignUniqueFallbackSlots } from '../data/fallbackArticleImages';
 import { fetchNewsStoryClusters, searchNewsStoryClusters } from '../api/newsApi';
 import { Link } from 'react-router';
 
@@ -30,7 +31,27 @@ export function FeedPage() {
   };
 
   useEffect(() => {
-    loadData();
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await fetchNewsStoryClusters();
+        if (!cancelled) {
+          setStoryClusters(data);
+          setLastSyncedAt(new Date());
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : String(e));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -58,6 +79,11 @@ export function FeedPage() {
           timeStyle: 'short',
         })}`
       : 'Bias Engine syncing...');
+
+  const fallbackSlotByKey = useMemo(
+    () => assignUniqueFallbackSlots(storyClusters),
+    [storyClusters],
+  );
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-['Inter']">
@@ -91,11 +117,13 @@ export function FeedPage() {
 
       {/* Live Sync Banner */}
       <div className="bg-[#FEF3C7] border-b border-yellow-300">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2">
-          <Zap className="w-4 h-4 text-yellow-700" />
-          <span className="text-sm text-yellow-900 font-medium">
-            Live Sync: {updatedText}
-          </span>
+        <div className="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex items-center gap-2 shrink-0">
+            <Zap className="w-4 h-4 text-yellow-700" />
+            <span className="text-sm text-yellow-900 font-medium">
+              Live Sync: {updatedText}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -111,10 +139,18 @@ export function FeedPage() {
         ) : error ? (
           <div className="text-sm text-red-700">{error}</div>
         ) : storyClusters.length === 0 || storyClusters[0].sources.length === 0 ? (
-          <div className="text-sm text-gray-600">No news available for this search.</div>
+          <div className="text-sm text-gray-600">
+            {isSearching
+              ? 'No news available for this search.'
+              : 'No news available yet.'}
+          </div>
         ) : (
           storyClusters.map((cluster) => (
-            <StoryCluster key={cluster.id} cluster={cluster} />
+            <StoryCluster
+              key={cluster.id}
+              cluster={cluster}
+              fallbackSlotByKey={fallbackSlotByKey}
+            />
           ))
         )}
       </main>

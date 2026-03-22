@@ -9,6 +9,8 @@ export interface SourceArticle {
   publisher: string;
   publisherLogo: string;
   iconUrl?: string;
+  /** Article hero image from API when available */
+  imageUrl?: string;
   headline: string;
   bias: BiasScore;
   url: string;

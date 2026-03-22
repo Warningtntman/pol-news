@@ -3,6 +3,24 @@ import type { BiasScore, SourceArticle, StoryCluster } from '../data/mockData'
 const LATEST_CLUSTER_ID = 'latest'
 const LATEST_CLUSTER_TITLE = 'Latest Political News'
 
+/** Same default as vite.config proxy target; avoids 404 when proxy is bypassed (e.g. vite preview). */
+function apiUrl(path: string): string {
+  const p = path.startsWith('/') ? path : `/${path}`
+  const raw = import.meta.env.VITE_BACKEND_URL as string | undefined
+  const explicit = raw?.trim().replace(/\/$/, '')
+  if (explicit) return `${explicit}${p}`
+  if (import.meta.env.DEV) return `http://127.0.0.1:8000${p}`
+  if (typeof window !== 'undefined' && window.location?.port) {
+    const port = window.location.port
+    // vite preview / static dev ports have no /api proxy — call API on :8000
+    if (['5173', '4173', '3000'].includes(port)) {
+      const host = window.location.hostname || '127.0.0.1'
+      return `http://${host}:8000${p}`
+    }
+  }
+  return p
+}
+
 function toNumber(value: unknown): number {
   const n = typeof value === 'number' ? value : Number(value)
   return Number.isFinite(n) ? n : 0
@@ -22,12 +40,17 @@ function extractRecords(payload: any): any[] {
   return []
 }
 
+const NEUTRAL_BIAS: BiasScore = { left: 34, center: 33, right: 33 }
+
 function mapBias(record: any): BiasScore {
-  return {
-    left: toNumber(record?.bias_left),
-    center: toNumber(record?.bias_center),
-    right: toNumber(record?.bias_right),
+  const left = toNumber(record?.bias_left)
+  const center = toNumber(record?.bias_center)
+  const right = toNumber(record?.bias_right)
+  // Raw NewsData / search hits have no bias fields; treat all-zero as neutral display.
+  if (left + center + right === 0) {
+    return NEUTRAL_BIAS
   }
+  return { left, center, right }
 }
 
 function faviconUrl(url: string): string | undefined {
@@ -46,11 +69,16 @@ function mapArticleToSource(record: any): SourceArticle {
 
   const publisherLogo = publisher ? publisher.slice(0, 3).toUpperCase() : 'N/A'
 
+  const rawImage = record?.image ?? record?.image_url ?? record?.thumbnail
+  const imageUrl =
+    typeof rawImage === 'string' && rawImage.trim() ? rawImage.trim() : undefined
+
   return {
     id: String(record?.article_id ?? record?.id ?? ''),
     publisher,
     publisherLogo,
     iconUrl: faviconUrl(url),
+    imageUrl,
     headline,
     url,
     bias: mapBias(record),
@@ -58,7 +86,7 @@ function mapArticleToSource(record: any): SourceArticle {
 }
 
 export async function fetchNewsStoryClusters(): Promise<StoryCluster[]> {
-  const res = await fetch('/api/news')
+  const res = await fetch(apiUrl('/api/news'))
   if (!res.ok) {
     throw new Error(`Failed to fetch /api/news (${res.status})`)
   }
@@ -80,23 +108,23 @@ export async function fetchNewsStoryClusters(): Promise<StoryCluster[]> {
 }
 
 export async function searchNewsStoryClusters(query: string): Promise<StoryCluster[]> {
-  const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+  const res = await fetch(`${apiUrl('/api/search')}?q=${encodeURIComponent(query)}`)
   if (!res.ok) {
-    throw new Error(`Failed to fetch /api/search (${res.status})`);
+    throw new Error(`Failed to fetch /api/search (${res.status})`)
   }
 
-  const payload = await res.json();
-  const records = extractRecords(payload);
+  const payload = await res.json()
+  const records = extractRecords(payload)
 
-  const sources = records.map(mapArticleToSource);
-  const latestTimestamp = records[0]?.date ?? new Date().toISOString();
+  const sources = records.map(mapArticleToSource)
+  const latestTimestamp = records[0]?.date ?? new Date().toISOString()
 
   const cluster: StoryCluster = {
     id: `search-${query}`,
     mainHeadline: `Search Results: ${query}`,
     timestamp: typeof latestTimestamp === 'string' ? latestTimestamp : String(latestTimestamp),
     sources,
-  };
+  }
 
-  return [cluster];
+  return [cluster]
 }
