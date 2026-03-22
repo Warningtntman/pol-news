@@ -46,11 +46,16 @@ function mapArticleToSource(record: any): SourceArticle {
 
   const publisherLogo = publisher ? publisher.slice(0, 3).toUpperCase() : 'N/A'
 
+  const rawImage = record?.image ?? record?.image_url ?? record?.thumbnail
+  const imageUrl =
+    typeof rawImage === 'string' && rawImage.trim() ? rawImage.trim() : undefined
+
   return {
     id: String(record?.article_id ?? record?.id ?? ''),
     publisher,
     publisherLogo,
     iconUrl: faviconUrl(url),
+    imageUrl,
     headline,
     url,
     bias: mapBias(record),

@@ -16,7 +16,12 @@ export function StoryCluster({ cluster }: StoryClusterProps) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {cluster.sources.map((source) => (
-          <SourceCard key={source.id} source={source} storyId={cluster.id} />
+          <SourceCard
+            key={source.id}
+            source={source}
+            storyId={cluster.id}
+            storyTitle={cluster.mainHeadline}
+          />
         ))}
       </div>
     </div>
