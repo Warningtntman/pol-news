@@ -27,21 +27,6 @@ export default defineConfig({
         target: backendUrl,
         changeOrigin: true,
       },
-      // FastAPI serves OpenAPI at /openapi.json and Swagger at /docs on :8000.
-      // If you open those URLs on the Vite origin (e.g. localhost:5173/docs), the
-      // browser would otherwise request /openapi.json from :5173 and fail with NetworkError.
-      '/openapi.json': {
-        target: backendUrl,
-        changeOrigin: true,
-      },
-      '/docs': {
-        target: backendUrl,
-        changeOrigin: true,
-      },
-      '/redoc': {
-        target: backendUrl,
-        changeOrigin: true,
-      },
     },
   },
 

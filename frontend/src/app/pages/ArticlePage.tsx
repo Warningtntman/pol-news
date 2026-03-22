@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { BiasMeter } from '../components/BiasMeter';
+import { QuizOverlay } from '../components/QuizOverlay';
+import { mockQuizQuestions } from '../data/mockData';
 import type { StoryCluster as StoryClusterType } from '../data/mockData';
 import { fetchNewsStoryClusters } from '../api/newsApi';
 
 export function ArticlePage() {
   const { storyId, articleId } = useParams();
   const navigate = useNavigate();
+  const [quizOpen, setQuizOpen] = useState(false);
   const [storyClusters, setStoryClusters] = useState<StoryClusterType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +37,7 @@ export function ArticlePage() {
 
   const story = storyClusters.find((s) => s.id === storyId);
   const article = story?.sources.find((a) => a.id === articleId);
+
   if (loading) {
     return <div className="min-h-screen p-6 text-sm text-gray-600">Loading article...</div>;
   }
@@ -98,7 +102,23 @@ export function ArticlePage() {
             <p className="text-gray-600 text-sm mb-8">No external link provided by the backend.</p>
           )}
         </div>
+
+        {/* CTA Button */}
+        <button
+          onClick={() => setQuizOpen(true)}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors shadow-lg hover:shadow-xl"
+        >
+          Test Your Stance: Take the 60-Second Quiz
+        </button>
       </main>
+
+      {/* Quiz Overlay */}
+      <QuizOverlay
+        isOpen={quizOpen}
+        onClose={() => setQuizOpen(false)}
+        questions={mockQuizQuestions}
+        topic="AI Regulation"
+      />
     </div>
   );
 }
