@@ -138,6 +138,28 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-200 bg-gray-50 py-6 text-center text-sm text-gray-500">
+        Powered by{' '}
+        <a
+          href="https://www.anthropic.com/claude"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-gray-700 hover:text-gray-900 transition-colors"
+        >
+          Claude
+        </a>{' '}
+        &amp;{' '}
+        <a
+          href="https://insforge.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-gray-700 hover:text-gray-900 transition-colors"
+        >
+          InsForge
+        </a>
+      </footer>
     </div>
   );
 }

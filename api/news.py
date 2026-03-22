@@ -35,9 +35,9 @@ class InsForgeClient:
         }
 
     async def analyze_bias(self, text: str):
-        """Calls Grok 4.1 via InsForge Gateway"""
+        """Calls Claude Haiku 4.5 via InsForge Gateway"""
         payload = {
-            'model': 'x-ai/grok-4.1-fast',
+            'model': 'claude-haiku-4-5-20251001',
             'messages': [
                 {
                     "role": "system", 

@@ -22,7 +22,8 @@ export function FeedPage() {
     try {
       const data = await fetchNewsStoryClusters();
       setStoryClusters(data);
-      setLastSyncedAt(new Date());
+      const ts = data[0]?.timestamp;
+      setLastSyncedAt(ts ? new Date(ts) : new Date());
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -38,7 +39,8 @@ export function FeedPage() {
         const data = await fetchNewsStoryClusters();
         if (!cancelled) {
           setStoryClusters(data);
-          setLastSyncedAt(new Date());
+          const ts = data[0]?.timestamp;
+          setLastSyncedAt(ts ? new Date(ts) : new Date());
         }
       } catch (e) {
         if (!cancelled) {
