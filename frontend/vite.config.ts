@@ -1,9 +1,14 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
-import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
-const backendUrl = process.env.VITE_BACKEND_URL || 'http://localhost:8000'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// Default to IPv4 loopback: on Windows, `localhost` may resolve to ::1 while uvicorn
+// often binds 127.0.0.1 only, breaking the dev proxy and leaving search with empty/errors.
+const backendUrl = process.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000'
 
 export default defineConfig({
   plugins: [

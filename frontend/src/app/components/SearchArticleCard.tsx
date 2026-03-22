@@ -1,24 +1,21 @@
 import { useMemo, useState } from 'react';
-import { SourceArticle } from '../data/mockData';
-import { BiasMeter } from './BiasMeter';
-import { Link } from 'react-router';
+import type { SourceArticle } from '../data/mockData';
 import { getPublisherAccent } from '../utils/publisherStyle';
 import { getFallbackArticleImageAt } from '../data/fallbackArticleImages';
 
-interface SourceCardProps {
+interface SearchArticleCardProps {
   source: SourceArticle;
-  storyId: string;
-  storyTitle: string;
 }
 
-export function SourceCard({ source, storyId, storyTitle }: SourceCardProps) {
+/**
+ * Live search hit: opens the publisher URL in a new tab (not in-app /article/...).
+ */
+export function SearchArticleCard({ source }: SearchArticleCardProps) {
   const [iconError, setIconError] = useState(false);
-  /** Primary API image failed or was rejected */
   const [primaryImageFailed, setPrimaryImageFailed] = useState(false);
-  /** Rotate through library when a fallback URL fails to load */
   const [fallbackOffset, setFallbackOffset] = useState(0);
 
-  const thumbSeed = useMemo(() => `${storyId}:${source.id}`, [storyId, source.id]);
+  const thumbSeed = useMemo(() => `search:${source.id}`, [source.id]);
 
   const usePrimary = Boolean(source.imageUrl) && !primaryImageFailed;
   const thumbSrc = usePrimary
@@ -26,12 +23,10 @@ export function SourceCard({ source, storyId, storyTitle }: SourceCardProps) {
     : getFallbackArticleImageAt(thumbSeed, fallbackOffset);
 
   const accent = getPublisherAccent(source.publisher);
+  const href = source.url && source.url !== '#' ? source.url : undefined;
 
-  return (
-    <Link
-      to={`/article/${storyId}/${source.id}`}
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
-    >
+  const inner = (
+    <>
       <div className="relative flex aspect-video w-full shrink-0 items-center justify-center overflow-hidden bg-slate-200">
         <img
           src={thumbSrc}
@@ -69,10 +64,10 @@ export function SourceCard({ source, storyId, storyTitle }: SourceCardProps) {
           </div>
           <div className="min-w-0">
             <span className="block truncate font-['Inter'] text-sm font-medium text-gray-900">
-              {source.publisher}
+              {source.publisher || 'Unknown source'}
             </span>
             <span className="block truncate font-['Inter'] text-xs font-medium text-slate-500">
-              {storyTitle}
+              Live search (not analyzed)
             </span>
           </div>
         </div>
@@ -81,10 +76,32 @@ export function SourceCard({ source, storyId, storyTitle }: SourceCardProps) {
           {source.headline}
         </h3>
 
-        <div className="mt-auto pt-1">
-          <BiasMeter bias={source.bias} />
-        </div>
+        <p className="mt-auto border-t border-gray-100 pt-2 font-['Inter'] text-xs text-slate-500">
+          Bias not analyzed — opens article in a new tab
+        </p>
       </div>
-    </Link>
+    </>
+  );
+
+  const cardClass =
+    'flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md';
+
+  if (!href) {
+    return (
+      <div className={`${cardClass} cursor-not-allowed opacity-60`} aria-disabled="true">
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cardClass}
+    >
+      {inner}
+    </a>
   );
 }

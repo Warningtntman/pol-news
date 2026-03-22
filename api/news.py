@@ -3,11 +3,14 @@ import os
 import json
 import asyncio
 import trafilatura
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
+from pathlib import Path
 
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(_REPO_ROOT / ".env")
 load_dotenv()
 
 # --- CONFIGURATION ---
@@ -101,76 +104,87 @@ async def sync_news_to_db():
     """Main task: Fetch (Filtered) -> Scrape -> AI -> Clean -> Save"""
     print("Starting Filtered News Sync (US Politics Only)...")
 
-    # If env vars aren't configured yet, don't spam failures. The UI can still start
-    # and will just show "no news available" until backend is fully configured.
     if not HAS_INFORGE or not HAS_NEWSDATA:
         print("Missing env vars (INSFORGE / NEWSDATA). Skipping sync.")
         return
     
-    # Updated params for strict filtering
     params = {
         "apikey": NEWSDATA_API_KEY,
         "language": "en", 
-        "category": "politics", # Only political news
-        "country": "us"         # Only US-based sources
+        "category": "politics",
+        "country": "us"
     }
     
     async with httpx.AsyncClient(timeout=30) as client:
-        # Latest endpoint ensures you get the most recent breaking news
         resp = await client.get("https://newsdata.io/api/1/latest", params=params)
-        raw_articles = resp.json().get('results', [])[:10]
-    
-    # ... rest of your scraping and AI logic remains the same ...
+        data = resp.json()
+        
+        # SAFETY CHECK 1: Prevent NewsData API crashes
+        if data.get('status') == 'error':
+            print(f"NewsData API Error: {data}")
+            return
+            
+        results = data.get('results', [])
+        raw_articles = results[:10] if isinstance(results, list) else []
 
     db_entries = []
     for article in raw_articles:
-        # Add this inside your 'for article in raw_articles:' loop
-        title = article.get('title', '').lower()
-        skip_keywords = ['listings', 'ratings', 'stocks', 'forecast', 'horoscope']
+        raw_title = article.get('title') or 'Untitled'
+        title = raw_title.lower()
+        
+        skip_keywords = [
+            'listings', 'ratings', 'stocks', 'forecast', 'horoscope',
+            'trading', 'price', 'nasdaq', 'nyse', 'dividend', 'staked',
+            'crypto', 'bitcoin', 'ethereum', 'network', 'yield', 'investing',
+            'market', 'inc.', 'ltd.', 'shares', 'equities', 'earnings', 
+            'buy rating', 'sell rating', 'wall street'
+        ]
 
         if any(word in title for word in skip_keywords):
             print(f"Skipping non-political item: {title[:30]}")
             continue
+            
         url = article.get('link')
-        title = article.get('title', 'Untitled')
         
-        # Scrape Text
         scraped_text = ""
         try:
             downloaded = trafilatura.fetch_url(url)
             scraped_text = trafilatura.extract(downloaded) if downloaded else ""
         except: pass
 
-        text = (scraped_text if len(scraped_text) > 100 else article.get('description', ''))[:2000]
+        description = article.get('description') or ''
+        text = (scraped_text if len(scraped_text) > 100 else description)[:2000]
         
-        # AI Analysis
         bias = {"left": 0, "center": 100, "right": 0}
         if len(text.strip()) > 20:
             try:
-                bias = await insforge.analyze_bias(text)
+                # SAFETY CHECK 2: Only overwrite bias if it's a valid dictionary
+                result = await insforge.analyze_bias(text)
+                if isinstance(result, dict) and 'left' in result:
+                    bias = result
                 print(f"Bias analyzed for: {title[:40]}...")
             except Exception as e:
                 print(f"AI Error for {title}: {e}")
 
-        article_id = article.get("article_id") or article.get("link") or title
+        article_id = article.get("article_id") or article.get("link") or raw_title
         db_entries.append({
             "article_id": article_id,
-            "title": title,
+            "title": raw_title,
             "link": url,
             "image": article.get("image_url"),
             "source": article.get("source_name"),
             "date": article.get("pubDate"),
-            "bias_left": bias['left'],
-            "bias_center": bias['center'],
-            "bias_right": bias['right']
+            # SAFETY CHECK 3: Use .get() to safely grab the numbers
+            "bias_left": bias.get('left', 0),
+            "bias_center": bias.get('center', 100),
+            "bias_right": bias.get('right', 0)
         })
 
-    # Execute Database Sync
     try:
-        # We clear first to ensure we only have the freshest 10 articles
-        await insforge.clear_news()
-        await insforge.save_records(db_entries)
-        print(f"Saved {len(db_entries)} fresh articles to database.")
+        if db_entries:
+            await insforge.clear_news()
+            await insforge.save_records(db_entries)
+            print(f"Saved {len(db_entries)} fresh articles to database.")
     except Exception as e:
         print(f"Database Sync Failed: {e}")
 
@@ -213,3 +227,82 @@ async def get_news():
         return {"status": "success", "articles": articles}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/api/search")
+async def search_live_news(q: str = Query(..., description="Search keyword")):
+    """Lightning-fast live search that skips web scraping and uses summaries."""
+    if not HAS_INFORGE or not HAS_NEWSDATA:
+        raise HTTPException(status_code=500, detail="Missing API keys")
+        
+    params = {
+        "apikey": NEWSDATA_API_KEY,
+        "language": "en", 
+        "category": "politics",
+        "country": "us",
+        "qInTitle": q 
+    }
+    
+    # 1. Fetch from NewsData (Fast)
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.get("https://newsdata.io/api/1/latest", params=params)
+        data = resp.json()
+        
+        if data.get('status') == 'error':
+            return {"status": "error", "message": "NewsData API Error", "articles": []}
+            
+        results = data.get('results', [])
+        raw_articles = results[:6] if isinstance(results, list) else []
+        
+    sem = asyncio.Semaphore(4) # Allow 4 concurrent AI calls
+
+    # 2. Process concurrently
+    async def process_single_article(article):
+        async with sem:
+            raw_title = article.get('title') or 'Untitled'
+            title = raw_title.lower()
+            
+            # Spam filter
+            skip_keywords = [
+                'listings', 'ratings', 'stocks', 'forecast', 'horoscope',
+                'trading', 'price', 'nasdaq', 'nyse', 'dividend', 'staked',
+                'crypto', 'bitcoin', 'ethereum', 'network', 'yield', 'investing',
+                'market', 'inc.', 'ltd.', 'shares', 'equities', 'earnings'
+            ]
+            if any(word in title for word in skip_keywords):
+                return None
+                
+            url = article.get('link')
+            
+            # ⚡ THE SPEED UP: Completely bypass Trafilatura and use the provided description
+            description = article.get('description') or raw_title
+            text = description[:2000] 
+            
+            # 3. Fast AI Analysis
+            bias = {"left": 0, "center": 100, "right": 0}
+            if len(text.strip()) > 15:
+                try:
+                    result = await insforge.analyze_bias(text)
+                    if isinstance(result, dict) and 'left' in result:
+                        bias = result
+                except Exception as e:
+                    print(f"Search AI error: {e}")
+                    
+            return {
+                "article_id": article.get("article_id") or url or raw_title,
+                "title": raw_title,
+                "link": url,
+                "image": article.get("image_url"),
+                "source": article.get("source_name"),
+                "date": article.get("pubDate"),
+                "bias_left": bias.get('left', 0),
+                "bias_center": bias.get('center', 100),
+                "bias_right": bias.get('right', 0)
+            }
+
+    # Execute all 6 processing tasks simultaneously
+    tasks = [process_single_article(article) for article in raw_articles]
+    processed_results = await asyncio.gather(*tasks)
+    
+    live_results = [res for res in processed_results if res is not None]
+        
+    return {"status": "success", "articles": live_results}

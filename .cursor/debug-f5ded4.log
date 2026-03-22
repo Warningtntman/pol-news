@@ -1,0 +1,2 @@
+{"sessionId":"f5ded4","location":"newsApi.ts:searchNewsArticles","message":"before fetch /api/search","data":{"trimmedLen":4},"timestamp":1774155094026,"hypothesisId":"H4"}
+{"sessionId":"f5ded4","location":"newsApi.ts:searchNewsArticles","message":"after fetch /api/search","data":{"ok":false,"status":404},"timestamp":1774155094034,"hypothesisId":"H4"}
