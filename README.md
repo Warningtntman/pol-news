@@ -47,7 +47,7 @@ npm install
 npm run dev
 ```
 
-The Vite dev server runs on `http://localhost:5173` and proxies `/api/*` requests to the backend at port 8000.
+The Vite dev server runs on `http://localhost:5173` and proxies `/api/*` requests to the backend.
 
 ---
 
