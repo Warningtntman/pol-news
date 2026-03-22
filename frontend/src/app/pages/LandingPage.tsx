@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Eye, Scale, Users, Sparkles, ArrowRight } from 'lucide-react';
+import { Eye, Scale, Users, Layers, ArrowRight } from 'lucide-react';
 
 export function LandingPage() {
   return (
@@ -86,14 +86,14 @@ export function LandingPage() {
           {/* Feature 3 */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
             <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
-              <Sparkles className="w-6 h-6 text-red-600" />
+              <Layers className="w-6 h-6 text-red-600" />
             </div>
             <h4 className="font-['Merriweather'] font-bold text-xl text-gray-900 mb-3">
-              Find Your True Stance
+              Three Perspectives, One Topic
             </h4>
             <p className="text-gray-600 leading-relaxed">
-              Take quick quizzes on real issues. Discover where you actually stand—
-              and which politicians share your views.
+              Each story cluster includes left, center, and right summaries grounded in
+              short quotes from real coverage—so you can see how framing shifts across outlets.
             </p>
           </div>
         </div>

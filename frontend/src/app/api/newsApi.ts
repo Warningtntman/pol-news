@@ -1,7 +1,12 @@
 import type { BiasScore, SourceArticle, StoryCluster } from '../data/mockData'
 
-const LATEST_CLUSTER_ID = 'latest'
-const LATEST_CLUSTER_TITLE = 'Latest Political News'
+type RawCluster = {
+  id?: string
+  title?: string
+  timestamp?: string
+  article_ids?: string[]
+  perspectives?: { left?: string; center?: string; right?: string }
+}
 
 function toNumber(value: unknown): number {
   const n = typeof value === 'number' ? value : Number(value)
@@ -19,6 +24,11 @@ function extractRecords(payload: any): any[] {
   if (Array.isArray(payload?.articles?.records)) return payload.articles.records
   if (Array.isArray(payload?.articles?.data)) return payload.articles.data
 
+  return []
+}
+
+function extractClusters(payload: any): RawCluster[] {
+  if (Array.isArray(payload?.clusters)) return payload.clusters
   return []
 }
 
@@ -56,17 +66,40 @@ export async function fetchNewsStoryClusters(): Promise<StoryCluster[]> {
 
   const payload = await res.json()
   const records = extractRecords(payload)
+  const clusters = extractClusters(payload)
+  const sourceById = new Map<string, SourceArticle>()
 
-  const sources = records.map(mapArticleToSource)
-  const latestTimestamp = records[0]?.date ?? new Date().toISOString()
+  records.forEach((record) => {
+    const source = mapArticleToSource(record)
+    sourceById.set(source.id, source)
+  })
 
-  const cluster: StoryCluster = {
-    id: LATEST_CLUSTER_ID,
-    mainHeadline: LATEST_CLUSTER_TITLE,
-    timestamp: typeof latestTimestamp === 'string' ? latestTimestamp : String(latestTimestamp),
-    sources,
+  if (clusters.length > 0) {
+    return clusters.map((cluster, idx) => {
+      const clusterSources = (cluster.article_ids ?? [])
+        .map((id) => sourceById.get(String(id)))
+        .filter((value): value is SourceArticle => Boolean(value))
+
+      return {
+        id: String(cluster.id ?? `cluster-${idx + 1}`),
+        mainHeadline: String(cluster.title ?? `Topic ${idx + 1}`),
+        timestamp: String(cluster.timestamp ?? new Date().toISOString()),
+        sources: clusterSources,
+        perspectives: {
+          left: String(cluster.perspectives?.left ?? ''),
+          center: String(cluster.perspectives?.center ?? ''),
+          right: String(cluster.perspectives?.right ?? ''),
+        },
+      }
+    }).filter((cluster) => cluster.sources.length > 0)
   }
 
-  return [cluster]
+  // Fallback for old backend shape without `clusters`.
+  return [{
+    id: 'latest',
+    mainHeadline: 'Latest Political News',
+    timestamp: String(records[0]?.date ?? new Date().toISOString()),
+    sources: records.map(mapArticleToSource),
+  }]
 }
 
